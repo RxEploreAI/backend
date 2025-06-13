@@ -10,7 +10,7 @@ from requests.exceptions import Timeout, ConnectionError, HTTPError
 load_dotenv()
 DATA_DIR     = os.getenv("DATA_DIR", "./data")
 PERSIST_DIR  = os.getenv("PERSIST_DIR", "./chroma")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "all-minilm")
+OLLAMA_MODEL = os.getenv("OLLAMA_EMBED_MODEL", "all-minilm")
 BASE_URL     = os.getenv("OLLAMA_URL", "http://localhost:11435")
 
 # — 2. Parser le NXML
@@ -86,35 +86,15 @@ client     = chromadb.PersistentClient(path=PERSIST_DIR)
 collection = client.get_or_create_collection("rxvigilance")
 
 try:
-    collection.add(
+    collection.upsert(
         ids=[d["id"] for d in documents],
         embeddings=embeddings,
         documents=[d["text"] for d in documents],
-        metadatas=[d["metadata"] for d in documents]
+        metadatas=[d["metadata"] for d in documents],
     )
-    print("✅ Première tentative d'indexation réussie.")
+    print("✅ Upsert OK : vos chunks sont désormais idempotents.")
 except Exception as e:
-    # Ici on intercepte TOUTE exception levée par .add()
-    print(f"⚠️ Erreur lors de collection.add(): {e}")
-    # Si c’est un doublon d’ID, on peut par exemple ignorer
-    # ou retravailler la liste des IDs avant de réessayer
-    # Par exemple, filtrer les IDs déjà présents :
-    existing = {m["id"] for m in collection.get(include=["metadatas"])["metadatas"]}
-    filtered_docs = [d for d in documents if d["id"] not in existing]
-    if filtered_docs:
-        print(f"🔄 Réessaie avec {len(filtered_docs)} nouveaux chunks…")
-        try:
-            collection.add(
-                ids=[d["id"] for d in filtered_docs],
-                embeddings=[embeddings[i] for i, d in enumerate(documents) if d["id"] not in existing],
-                documents=[d["text"] for d in filtered_docs],
-                metadatas=[d["metadata"] for d in filtered_docs]
-            )
-            print("✅ Ré-indexation partielle réussie.")
-        except Exception as e2:
-            print(f"❌ Échec de la ré-indexation partielle : {e2}")
-    else:
-        print("ℹ️ Aucun chunk supplémentaire à indexer.")
+    print("❌ Erreur lors de upsert:", e)
 # persist() est optionnel avec le nouveau client
 count = collection.count()
 print(f"📊 Nombre total de vecteurs dans 'rxvigilance' : {count}")

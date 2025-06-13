@@ -44,8 +44,11 @@ def search(q: str = Query(...)):
 @app.post("/chat")
 def chat(req: ChatRequest):
     # 1. Récupération des documents depuis Chroma
-    qr = col.query(query_texts=[req.content], n_results=1, include=["documents"])
-    chunks = qr["documents"][0] if qr["documents"] else []
+    qr = col.query(query_texts=[req.content], n_results=3, include=["documents"])
+    chunks = []
+    if "documents" in qr and qr["documents"]:
+        for group in qr["documents"]:
+            chunks.extend(group)
 
     if not chunks:
         raise HTTPException(status_code=404, detail="Aucun contexte trouvé pour cette question.")

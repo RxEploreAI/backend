@@ -54,9 +54,13 @@ def chat(req: ChatRequest):
 
     # 2. Construction du prompt
     prompt = (
-        "Tu es un assistant pharmacien expert. Réponds en te basant uniquement sur le contexte.\n\n"
-        f"### CONTEXTE:\n{context}\n\n"
-        f"### QUESTION:\n{req.content}\n\n### RÉPONSE:"
+        "You are an expert pharmacist assistant. Answer the question below "
+        "using only the information provided in the context. "
+        "If the answer is not present in the context, reply with: "
+        "\"I'm sorry, I could not find any relevant information in the provided context.\"\n\n"
+        f"### CONTEXT:\n{context}\n\n"
+        f"### QUESTION:\n{req.content}\n\n"
+        "### ANSWER:"
     )
 
     # 3. Appel à Ollama

@@ -1,3 +1,3 @@
 # Install
-pip install -r /path/to/requirements.txt
+pip install -r requirements.txt
 
